@@ -20,23 +20,38 @@ class RolePermissionSeeder extends Seeder
             'permissions' => [
                 'role' => ['view', 'create', 'edit', 'delete'],
                 'user' => ['view', 'create', 'edit', 'delete'],
-                'profile' => ['view', 'edit', 'delete']
+                'profile' => ['view', 'edit', 'delete'],
+                'course' => ['create', 'view', 'edit', 'delete'],
+                'lesson' => ['create', 'view', 'edit', 'delete'],
+                'exam' => ['create', 'view', 'edit', 'delete'],
+                'certificate' => ['create', 'view', 'edit', 'delete'],
+                'payment' => ['view', 'delete'],
             ],
             'roles' => [
                 'superadmin',
-                'user'
-                // Add a new role here
+                'teacher',
+                'student'
             ],
             'role_permissions' => [
-                'user' => [
-                    'profile' => ['view', 'edit', 'delete']
+                'teacher' => [
+                    'course' => ['create', 'view', 'edit', 'delete'],
+                    'lesson' => ['create', 'view', 'edit', 'delete'],
+                    'exam' => ['create', 'view', 'edit', 'delete'],
+                    'certificate' => ['view'],
+                    'payment' => ['view'],
                 ],
-                // Add permissions for a new role here
+                'student' => [
+                    'course' => ['view'],
+                    'lesson' => ['view'],
+                    'exam' => ['view'],
+                    'certificate' => ['view'],
+                    'payment' => ['view'],
+                ]
             ],
             'user_roles' => [
                 'admin@iqbolshoh.uz' => 'superadmin',
-                'user@iqbolshoh.uz' => 'user',
-                // Add a new user here
+                'teacher@iqbolshoh.uz' => 'teacher',
+                'student@iqbolshoh.uz' => 'student',
             ]
         ];
 
