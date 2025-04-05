@@ -34,6 +34,7 @@ class RolePermissionSeeder extends Seeder
             ],
             'role_permissions' => [
                 'teacher' => [
+                    'profile' => ['view', 'edit'],
                     'course' => ['create', 'view', 'edit', 'delete'],
                     'lesson' => ['create', 'view', 'edit', 'delete'],
                     'exam' => ['create', 'view', 'edit', 'delete'],
@@ -41,6 +42,7 @@ class RolePermissionSeeder extends Seeder
                     'payment' => ['view'],
                 ],
                 'student' => [
+                    'profile' => ['view', 'edit'],
                     'course' => ['view'],
                     'lesson' => ['view'],
                     'exam' => ['view'],
