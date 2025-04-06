@@ -14,8 +14,9 @@ return new class extends Migration {
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
+            $table->string('image')->nullable();
             $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
-            $table->boolean('is_published')->default(false);
+            $table->boolean('is_published')->default(false); // nashr holati
             $table->timestamps();
         });
     }

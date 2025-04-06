@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('course_id')->constrained()->onDelete('cascade');
             $table->string('title');
+            $table->string('video_url')->nullable();
             $table->text('content')->nullable();
             $table->integer('order')->default(1);
             $table->timestamps();
