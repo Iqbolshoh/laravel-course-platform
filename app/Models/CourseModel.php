@@ -11,7 +11,19 @@ class CourseModel extends Model
 
     protected $table = 'courses';
 
-    protected $fillable = ['title', 'description', 'image', 'teacher_id', 'is_published', 'created_at', 'updated_at'];
+    protected $fillable = [
+        'title',
+        'description',
+        'image',
+        'teacher_id',
+        'is_published',
+        'price',
+    ];
+
+    protected $casts = [
+        'is_published' => 'boolean',
+        'price' => 'decimal:2',
+    ];
 
     public function teacher()
     {

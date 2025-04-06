@@ -14,6 +14,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
 use Filament\Actions\Action as FilamentAction;
 use App\Models\CourseModel;
+use Illuminate\Support\Facades\Storage;
+use App\Helpers\Utils;
 
 class Course extends Page implements HasTable
 {
@@ -26,6 +28,26 @@ class Course extends Page implements HasTable
 
     /*
     |-------------------------------------------------------------------------- 
+    | Access Control Check
+    |-------------------------------------------------------------------------- 
+    | Determines if the authenticated user has permission to access this page
+    */
+    public static function canAccess(string $permission = 'view'): bool
+    {
+        if (!$user = auth()->user())
+            return false;
+
+        return match ($permission) {
+            'view' => $user->can('course.view'),
+            'create' => $user->can('course.create'),
+            'edit' => $user->can('course.edit'),
+            'delete' => $user->can('course.delete'),
+            default => false,
+        };
+    }
+
+    /*
+    |-------------------------------------------------------------------------- 
     | Get Table Query
     |-------------------------------------------------------------------------- 
     | Fetches the query for the CourseModel to populate the table.
@@ -34,6 +56,7 @@ class Course extends Page implements HasTable
     {
         return CourseModel::query();
     }
+
 
     /*
     |-------------------------------------------------------------------------- 
@@ -49,6 +72,7 @@ class Course extends Page implements HasTable
             TextColumn::make('description')->label('Description')->limit(50)->sortable()->searchable(),
             TextColumn::make('created_at')->label('Created At')->sortable()->dateTime(),
             TextColumn::make('updated_at')->label('Updated At')->sortable()->dateTime(),
+            TextColumn::make('image')->label('Image')->sortable(),
         ];
     }
 
@@ -62,16 +86,68 @@ class Course extends Page implements HasTable
     {
         return [
             EditAction::make()
+                ->visible(fn() => $this->canAccess('edit'))
                 ->form($this->getEditFormSchema())
                 ->action(function (CourseModel $course, array $data): void {
                     $this->updateCourse($course, $data);
                 }),
 
             DeleteAction::make()
+                ->visible(fn() => $this->canAccess('delete'))
                 ->action(function (CourseModel $course): void {
+                    if ($course->image && Storage::disk('public')->exists($course->image)) {
+                        Storage::disk('public')->delete($course->image);
+                    }
                     $course->delete();
-                    session()->flash('success', "Course '{$course->title}' deleted successfully!");
+                    Utils::notify('Success', "Course '{$course->title}' deleted successfully!", 'success');
                 }),
+        ];
+    }
+
+    /*
+    |---------------------------------------------------------------------- 
+    | Table Bulk Actions Definition
+    |---------------------------------------------------------------------- 
+    | Defines the bulk actions available for selected user records.
+    */
+    protected function getTableBulkActions(): array
+    {
+        return $this->canAccess('delete')
+            ? [
+                \Filament\Tables\Actions\BulkActionGroup::make([
+                    \Filament\Tables\Actions\DeleteBulkAction::make()
+                        ->action(function ($records): void {
+                            foreach ($records as $course) {
+                                if ($course->image && Storage::disk('public')->exists($course->image)) {
+                                    Storage::disk('public')->delete($course->image);
+                                }
+                                $course->delete();
+                            }
+                            session()->flash('success', 'Selected courses deleted successfully!');
+                        }),
+                ]),
+            ]
+            : [];
+    }
+
+    /*
+    |-------------------------------------------------------------------------- 
+    | Get Header Actions
+    |-------------------------------------------------------------------------- 
+    | Defines the actions available at the header, like creating a new course.
+    */
+    protected function getHeaderActions(): array
+    {
+        return [
+            FilamentAction::make('create')
+                ->label('Create Course')
+                ->icon('heroicon-o-plus')
+                ->form($this->getCreateFormSchema())
+                ->action(function (array $data): void {
+                    $this->createCourse($data);
+                })
+                ->visible(fn() => self::canAccess('create'))
+                ->color('primary'),
         ];
     }
 
@@ -102,6 +178,12 @@ class Course extends Page implements HasTable
                 ->nullable()
                 ->maxSize(5 * 1024)
                 ->helperText('Upload a course image. (Max size: 5MB)'),
+
+            TextInput::make('price')
+                ->label('Price')
+                ->required()
+                ->numeric()
+                ->helperText('Enter the course price'),
         ];
     }
 
@@ -124,14 +206,11 @@ class Course extends Page implements HasTable
                 ->required()
                 ->maxLength(500),
 
-            FileUpload::make('image')
-                ->label('Course Image')
-                ->image()
-                ->disk('public')
-                ->directory('course_images')
-                ->nullable()
-                ->maxSize(5 * 1024)
-                ->helperText('Upload a course image. (Max size: 5MB)'),
+            TextInput::make('price')
+                ->label('Price')
+                ->required()
+                ->numeric()
+                ->helperText('Enter the course price'),
         ];
     }
 
@@ -143,57 +222,49 @@ class Course extends Page implements HasTable
     */
     private function createCourse(array $data): void
     {
-        $imagePath = null;
+        $validatedData = \Validator::make($data, [
+            'title' => 'required|max:255',
+            'description' => 'nullable|max:500',
+            'price' => 'required|numeric|min:0|max:9999999',
+        ])->validate();
+
         if ($data['image'] && $data['image'] instanceof \Illuminate\Http\UploadedFile) {
-            $imagePath = $data['image']->store('course_images', 'public');
+            $data['image']->store('course_images', 'public');
         }
 
         CourseModel::create([
             'title' => $data['title'],
             'description' => $data['description'],
-            'image' => $imagePath,
+            'image' => $data['image'],
+            'price' => $data['price'],
             'teacher_id' => auth()->id(),
             'is_published' => false,
         ]);
-        session()->flash('success', "Course '{$data['title']}' created successfully!");
-    }
 
+        Utils::notify('Success', "Course '{$data['title']}' created successfully!", 'success');
+    }
 
     /*
     |-------------------------------------------------------------------------- 
     | Update Course Method
     |-------------------------------------------------------------------------- 
-    | Handles updating an existing course, including uploading an image if provided.
+    | Handles updating an existing course, including handling image updates properly
     */
     private function updateCourse(CourseModel $course, array $data): void
     {
-        $imagePath = $data['image'] ? $data['image']->store('course_images', 'public') : $course->image;
+        $validatedData = \Validator::make($data, [
+            'title' => 'required|max:255',
+            'description' => 'nullable|max:500',
+            'price' => 'required|numeric|min:0|max:9999999',
+        ])->validate();
 
-        $course->update([
+        $updateData = [
             'title' => $data['title'],
             'description' => $data['description'],
-            'image' => $imagePath,
-        ]);
-        session()->flash('success', "Course '{$data['title']}' updated successfully!");
-    }
-
-    /*
-    |-------------------------------------------------------------------------- 
-    | Get Header Actions
-    |-------------------------------------------------------------------------- 
-    | Defines the actions available at the header, like creating a new course.
-    */
-    protected function getHeaderActions(): array
-    {
-        return [
-            FilamentAction::make('create')
-                ->label('Create Course')
-                ->icon('heroicon-o-plus')
-                ->form($this->getCreateFormSchema())
-                ->action(function (array $data): void {
-                    $this->createCourse($data);
-                })
-                ->color('primary'),
+            'price' => $data['price'],
         ];
+
+        $course->update($updateData);
+        Utils::notify('Success', "Course '{$course->title}' updated successfully!", 'success');
     }
 }
