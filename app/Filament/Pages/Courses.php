@@ -17,12 +17,12 @@ use App\Models\CourseModel;
 use Illuminate\Support\Facades\Storage;
 use App\Helpers\Utils;
 
-class Course extends Page implements HasTable
+class Courses extends Page implements HasTable
 {
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
-    protected static string $view = 'filament.pages.course';
+    protected static string $view = 'filament.pages.courses';
     protected static ?string $navigationGroup = 'Education';
     protected static ?int $navigationSort = 6;
 
@@ -57,7 +57,6 @@ class Course extends Page implements HasTable
         return CourseModel::query();
     }
 
-
     /*
     |-------------------------------------------------------------------------- 
     | Get Table Columns
@@ -72,7 +71,11 @@ class Course extends Page implements HasTable
             TextColumn::make('description')->label('Description')->limit(50)->sortable()->searchable(),
             TextColumn::make('created_at')->label('Created At')->sortable()->dateTime(),
             TextColumn::make('updated_at')->label('Updated At')->sortable()->dateTime(),
-            TextColumn::make('image')->label('Image')->sortable(),
+            \Filament\Tables\Columns\ImageColumn::make('image')
+                ->label('Image')
+                ->disk('public')
+                ->height(50)
+                ->circular(),
         ];
     }
 
