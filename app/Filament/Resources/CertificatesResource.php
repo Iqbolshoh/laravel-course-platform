@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CertificatesResource\Pages;
 use App\Filament\Resources\CertificatesResource\RelationManagers;
-use App\Models\Certificates;
+use App\Models\Certificate;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CertificatesResource extends Resource
 {
-    protected static ?string $model = Certificates::class;
+    protected static ?string $model = Certificate::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-check';
     protected static ?string $navigationGroup = 'Documents';
     protected static ?int $navigationSort = 9;

@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CoursesResource\Pages;
 use App\Filament\Resources\CoursesResource\RelationManagers;
-use App\Models\Courses;
+use App\Models\Course;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CoursesResource extends Resource
 {
-    protected static ?string $model = Courses::class;
+    protected static ?string $model = Course::class;
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     protected static ?string $navigationGroup = 'Education';
     protected static ?int $navigationSort = 6;
