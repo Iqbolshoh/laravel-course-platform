@@ -2,9 +2,8 @@
 
 namespace App\Providers;
 
+use Gate;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
-use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,11 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Super Admin roliga barcha ruxsatlarni avtomatik ravishda berish
         Gate::before(function ($user, $ability) {
             return $user->hasRole('superadmin') ? true : null;
         });
     }
-
 }
-

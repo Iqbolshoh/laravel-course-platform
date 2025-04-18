@@ -18,42 +18,23 @@ class RolePermissionSeeder extends Seeder
         */
         $config = [
             'permissions' => [
-                'role' => ['view', 'create', 'edit', 'delete'],
-                'user' => ['view', 'create', 'edit', 'delete'],
-                'profile' => ['view', 'edit', 'delete'],
-                'course' => ['create', 'view', 'edit', 'delete'],
-                'lesson' => ['create', 'view', 'edit', 'delete'],
-                'exam' => ['create', 'view', 'edit', 'delete'],
-                'certificate' => ['create', 'view', 'edit', 'delete'],
-                'payment' => ['view', 'delete'],
+                'profile' => ['view', 'edit', 'delete']
             ],
             'roles' => [
                 'superadmin',
-                'teacher',
-                'student'
+                'user'
+                // Add a new role here
             ],
             'role_permissions' => [
-                'teacher' => [
-                    'profile' => ['view', 'edit'],
-                    'course' => ['create', 'view', 'edit', 'delete'],
-                    'lesson' => ['create', 'view', 'edit', 'delete'],
-                    'exam' => ['create', 'view', 'edit', 'delete'],
-                    'certificate' => ['view'],
-                    'payment' => ['view'],
+                'user' => [
+                    'profile' => ['view', 'edit']
                 ],
-                'student' => [
-                    'profile' => ['view', 'edit'],
-                    'course' => ['view'],
-                    'lesson' => ['view'],
-                    'exam' => ['view'],
-                    'certificate' => ['view'],
-                    'payment' => ['view'],
-                ]
+                // Add permissions for a new role here
             ],
             'user_roles' => [
                 'admin@iqbolshoh.uz' => 'superadmin',
-                'teacher@iqbolshoh.uz' => 'teacher',
-                'student@iqbolshoh.uz' => 'student',
+                'user@iqbolshoh.uz' => 'user',
+                // Add a new user here
             ]
         ];
 

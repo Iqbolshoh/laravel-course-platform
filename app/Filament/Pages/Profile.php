@@ -2,13 +2,13 @@
 
 namespace App\Filament\Pages;
 
-use App\Helpers\Utils;
 use Filament\Pages\Page;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Notifications\Notification;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Illuminate\Support\Facades\Hash;
@@ -70,6 +70,19 @@ class Profile extends Page implements HasForms
                             ->unique('users', 'email', ignorable: Auth::user())
                             ->maxLength(255)
                             ->disabled(fn() => !$this->canAccess('edit')),
+                    ])
+                    ->collapsible(),
+
+                Section::make('Change Password')
+                    ->description('Change your current password securely.')
+                    ->schema([
+                        TextInput::make('current_password')
+                            ->label('Current Password')
+                            ->password()
+                            ->required(fn($get) => filled($get('password')))
+                            ->dehydrated(false)
+                            ->helperText('Enter your current password to change it.')
+                            ->disabled(fn() => !$this->canAccess('edit')),
 
                         TextInput::make('password')
                             ->label('New Password')
@@ -81,8 +94,10 @@ class Profile extends Page implements HasForms
                             ->afterStateUpdated(function ($state, callable $set) {
                                 if (empty($state)) {
                                     $set('password_confirmation', null);
+                                    $set('current_password', null);
                                 }
-                            })->disabled(fn() => !$this->canAccess('edit')),
+                            })
+                            ->disabled(fn() => !$this->canAccess('edit')),
 
                         TextInput::make('password_confirmation')
                             ->label('Confirm Password')
@@ -91,32 +106,33 @@ class Profile extends Page implements HasForms
                             ->same('password')
                             ->dehydrated(fn(?string $state): bool => filled($state))
                             ->disabled(fn() => !$this->canAccess('edit')),
-
-                        Actions::make([
-                            Action::make('save')
-                                ->label('Save Changes')
-                                ->action('save')
-                                ->color('primary')
-                                ->visible(fn() => $this->canAccess('edit')),
-
-                            Action::make('delete')
-                                ->label('Delete Profile')
-                                ->color('danger')
-                                ->requiresConfirmation()
-                                ->modalHeading('Confirm Profile Deletion')
-                                ->modalSubmitActionLabel('Delete Profile')
-                                ->modalWidth('md')
-                                ->form([
-                                    TextInput::make('delete_password')
-                                        ->label('Enter your password to confirm')
-                                        ->required()
-                                        ->autocomplete('current-password'),
-                                ])
-                                ->action(fn($data) => $this->delete($data))
-                                ->visible(fn() => $this->canAccess('delete')),
-                        ])->fullWidth(),
                     ])
                     ->collapsible(),
+
+                Actions::make([
+                    Action::make('save')
+                        ->label('Save Changes')
+                        ->action('save')
+                        ->color('primary')
+                        ->visible(fn() => $this->canAccess('edit')),
+
+                    Action::make('delete')
+                        ->label('Delete Profile')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Confirm Profile Deletion')
+                        ->modalSubmitActionLabel('Delete Profile')
+                        ->modalWidth('md')
+                        ->form([
+                            TextInput::make('delete_password')
+                                ->label('Enter your password to confirm')
+                                ->required()
+                                ->password()
+                                ->autocomplete('current-password'),
+                        ])
+                        ->action(fn($data) => $this->delete($data))
+                        ->visible(fn() => $this->canAccess('delete')),
+                ])->fullWidth(),
             ])
             ->statePath('data')
             ->model(Auth::user());
@@ -148,6 +164,17 @@ class Profile extends Page implements HasForms
     {
         $data = $this->form->getState();
 
+        if (!empty($data['password'])) {
+            if (!Hash::check($data['current_password'] ?? '', Auth::user()->password)) {
+                Notification::make()
+                    ->title('Error')
+                    ->body('Your current password is incorrect.')
+                    ->danger()
+                    ->send();
+                return;
+            }
+        }
+
         $updateData = [
             'name' => $data['name'],
             'email' => $data['email'],
@@ -162,9 +189,14 @@ class Profile extends Page implements HasForms
         Auth::logout();
         session()->invalidate();
         session()->regenerateToken();
-        $this->redirect('/login');
 
-        Utils::notify('Success', 'Your profile has been updated successfully!', 'success');
+        Notification::make()
+            ->title('Success')
+            ->body('Your profile has been updated successfully!')
+            ->success()
+            ->send();
+
+        $this->redirect('/login');
     }
 
     /*
@@ -177,7 +209,11 @@ class Profile extends Page implements HasForms
     public function delete($data): void
     {
         if (!Hash::check($data['delete_password'], Auth::user()->password)) {
-            Utils::notify('Error', 'The password you entered is incorrect.', 'danger');
+            Notification::make()
+                ->title('Error')
+                ->body('The password you entered is incorrect.')
+                ->danger()
+                ->send();
             return;
         }
 
@@ -185,7 +221,11 @@ class Profile extends Page implements HasForms
         Auth::logout();
         $user->delete();
 
-        Utils::notify('Profile Deleted', 'Your profile has been deleted successfully.', 'success');
+        Notification::make()
+            ->title('Profile Deleted')
+            ->body('Your profile has been deleted successfully.')
+            ->success()
+            ->send();
 
         $this->redirect('/login');
     }

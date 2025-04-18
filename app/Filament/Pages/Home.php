@@ -19,7 +19,6 @@ class Home extends Page
     | Retrieves the current user's name, email, role, join date, and 
     | last login time.
     */
-
     public function getViewData(): array
     {
         $user = Auth::user();

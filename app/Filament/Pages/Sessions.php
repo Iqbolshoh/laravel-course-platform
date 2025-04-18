@@ -30,15 +30,9 @@ class Sessions extends Page implements HasForms, HasTable
     |----------------------------------------------------------------------
     | Determines if the authenticated user has permission to access this page.
     */
-    public static function canAccess(string $permission = 'view'): bool
+    public static function canAccess(): bool
     {
-        if (!$user = auth()->user())
-            return false;
-
-        return match ($permission) {
-            'view' => $user->can('profile.view'),
-            default => false,
-        };
+        return auth()->check() && auth()->user()->can('profile.view');
     }
 
     /*

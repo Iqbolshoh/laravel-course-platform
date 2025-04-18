@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Filament\Pages;
+use App\Filament\Pages\Auth\Register;
 
-Route::middleware('auth')->group(function () {
-    Route::get('/courses/{course}', [Pages\Courses::class, 'details'])->name('courses.show');
-});
+Route::get('/register', Register::class)->name('register');

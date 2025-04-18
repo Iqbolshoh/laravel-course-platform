@@ -18,8 +18,7 @@ class UserSeeder extends Seeder
         */
         $users = [
             ['name' => 'Super Admin', 'email' => 'admin@iqbolshoh.uz', 'password' => Hash::make('IQBOLSHOH')],
-            ['name' => 'Teacher', 'email' => 'teacher@iqbolshoh.uz', 'password' => Hash::make('IQBOLSHOH')],
-            ['name' => 'Student', 'email' => 'student@iqbolshoh.uz', 'password' => Hash::make('IQBOLSHOH')]
+            ['name' => 'User', 'email' => 'user@iqbolshoh.uz', 'password' => Hash::make('IQBOLSHOH')]
         ];
 
         /*
@@ -36,6 +35,6 @@ class UserSeeder extends Seeder
         |-------------------------------------------------------------------------- 
         | This section displays a confirmation message
         */
-        $this->command->info('Users seeded: Admin, Teacher, Student!');
+        $this->command->info('Users seeded: Superadmin & Users!');
     }
 }
