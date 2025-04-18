@@ -10,6 +10,15 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -38,11 +47,39 @@ class LessonsResource extends Resource
             default => false,
         };
     }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                //
+                Select::make('course_id')
+                    ->label('Course')
+                    ->relationship('course', 'title')
+                    ->required(),
+
+                TextInput::make('title')
+                    ->label('Lesson Title')
+                    ->required()
+                    ->maxLength(255),
+
+                TextInput::make('video_url')
+                    ->label('YouTube Video URL')
+                    ->url()
+                    ->placeholder('https://www.youtube.com/watch?v=XXXX')
+                    ->helperText('Faqat YouTube videosining asosiy URL qismini kiriting.')
+                    ->dehydrateStateUsing(function ($state) {
+                        parse_str(parse_url($state, PHP_URL_QUERY), $query);
+                        return isset($query['v']) ? 'https://www.youtube.com/watch?v=' . $query['v'] : $state;
+                    }),
+
+                RichEditor::make('content')
+                    ->label('Lesson Content')
+                    ->maxLength(65535),
+
+                TextInput::make('order')
+                    ->label('Order')
+                    ->numeric()
+                    ->default(1),
             ]);
     }
 
@@ -50,17 +87,32 @@ class LessonsResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('course.title')
+                    ->label('Course')
+                    ->sortable()
+                    ->searchable(),
+
+                TextColumn::make('title')
+                    ->label('Title')
+                    ->sortable()
+                    ->searchable(),
+
+                TextColumn::make('order')
+                    ->label('Order')
+                    ->sortable(),
+
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->label('Created At'),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
