@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
             $table->boolean('is_published')->default(false);
             $table->decimal('price', 10, 2)->default(0);
+            $table->decimal('discount', 5, 2)->nullable()->default(0);
             $table->timestamps();
         });
     }
@@ -30,3 +31,4 @@ return new class extends Migration {
         Schema::dropIfExists('courses');
     }
 };
+

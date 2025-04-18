@@ -18,11 +18,13 @@ class CourseModel extends Model
         'teacher_id',
         'is_published',
         'price',
+        'discount',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
         'price' => 'decimal:2',
+        'discount' => 'decimal:2',
     ];
 
     public function teacher()

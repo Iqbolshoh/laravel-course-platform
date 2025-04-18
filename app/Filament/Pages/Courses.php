@@ -12,6 +12,7 @@ use Filament\Tables\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Actions\Action;
 use Filament\Actions\Action as FilamentAction;
 use App\Models\CourseModel;
 use Illuminate\Support\Facades\Storage;
@@ -26,12 +27,6 @@ class Courses extends Page implements HasTable
     protected static ?string $navigationGroup = 'Education';
     protected static ?int $navigationSort = 6;
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Access Control Check
-    |-------------------------------------------------------------------------- 
-    | Determines if the authenticated user has permission to access this page
-    */
     public static function canAccess(string $permission = 'view'): bool
     {
         if (!$user = auth()->user())
@@ -46,23 +41,11 @@ class Courses extends Page implements HasTable
         };
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Get Table Query
-    |-------------------------------------------------------------------------- 
-    | Fetches the query for the CourseModel to populate the table.
-    */
     protected function getTableQuery()
     {
         return CourseModel::query();
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Get Table Columns
-    |-------------------------------------------------------------------------- 
-    | Defines the columns to display in the table.
-    */
     protected function getTableColumns(): array
     {
         return [
@@ -76,24 +59,23 @@ class Courses extends Page implements HasTable
                 ->disk('public')
                 ->height(50)
                 ->circular(),
+            TextColumn::make('discount')->label('Discount (%)')->sortable()->numeric()->default(0),
         ];
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Get Table Actions
-    |-------------------------------------------------------------------------- 
-    | Defines the actions available in the table, like Edit and Delete.
-    */
     protected function getTableActions(): array
     {
         return [
+            Action::make('view')
+                ->label('View')
+                ->icon('heroicon-o-eye')
+                ->url(fn(CourseModel $record) => route('courses.show', $record))
+                ->openUrlInNewTab(), // Yoki olib tashlang agar yangi tabda ochilishini istamasangiz
+
             EditAction::make()
                 ->visible(fn() => $this->canAccess('edit'))
                 ->form($this->getEditFormSchema())
-                ->action(function (CourseModel $course, array $data): void {
-                    $this->updateCourse($course, $data);
-                }),
+                ->action(fn(CourseModel $course, array $data) => $this->updateCourse($course, $data)),
 
             DeleteAction::make()
                 ->visible(fn() => $this->canAccess('delete'))
@@ -107,17 +89,12 @@ class Courses extends Page implements HasTable
         ];
     }
 
-    /*
-    |---------------------------------------------------------------------- 
-    | Table Bulk Actions Definition
-    |---------------------------------------------------------------------- 
-    | Defines the bulk actions available for selected user records.
-    */
     protected function getTableBulkActions(): array
     {
         return $this->canAccess('delete')
             ? [
                 \Filament\Tables\Actions\BulkActionGroup::make([
+
                     \Filament\Tables\Actions\DeleteBulkAction::make()
                         ->action(function ($records): void {
                             foreach ($records as $course) {
@@ -133,12 +110,6 @@ class Courses extends Page implements HasTable
             : [];
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Get Header Actions
-    |-------------------------------------------------------------------------- 
-    | Defines the actions available at the header, like creating a new course.
-    */
     protected function getHeaderActions(): array
     {
         return [
@@ -154,24 +125,20 @@ class Courses extends Page implements HasTable
         ];
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Get Create Form Schema
-    |-------------------------------------------------------------------------- 
-    | Defines the fields for the "Create Course" form.
-    */
     protected function getCreateFormSchema(): array
     {
         return [
             TextInput::make('title')
                 ->label('Course Title')
                 ->required()
-                ->maxLength(255),
+                ->maxLength(255)
+                ->rules('min:3', 'max:255'),
 
             Textarea::make('description')
                 ->label('Course Description')
                 ->required()
-                ->maxLength(500),
+                ->maxLength(500)
+                ->rules('nullable', 'max:500'),
 
             FileUpload::make('image')
                 ->label('Course Image')
@@ -186,16 +153,18 @@ class Courses extends Page implements HasTable
                 ->label('Price')
                 ->required()
                 ->numeric()
+                ->rules('min:0', 'max:9999999')
                 ->helperText('Enter the course price'),
+
+            TextInput::make('discount')
+                ->label('Discount (%)')
+                ->nullable()
+                ->numeric()
+                ->rules('min:0', 'max:100') // Validation for discount percentage
+                ->helperText('Enter the discount percentage'),
         ];
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Get Edit Form Schema
-    |-------------------------------------------------------------------------- 
-    | Defines the fields for the "Edit Course" form.
-    */
     protected function getEditFormSchema(): array
     {
         return [
@@ -214,21 +183,23 @@ class Courses extends Page implements HasTable
                 ->required()
                 ->numeric()
                 ->helperText('Enter the course price'),
+
+            TextInput::make('discount')
+                ->label('Discount (%)')
+                ->nullable()
+                ->numeric()
+                ->rules('min:0', 'max:100')
+                ->helperText('Enter the discount percentage'),
         ];
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Create Course Method
-    |-------------------------------------------------------------------------- 
-    | Handles creating a new course, including uploading an image.
-    */
     private function createCourse(array $data): void
     {
         $validatedData = \Validator::make($data, [
             'title' => 'required|max:255',
             'description' => 'nullable|max:500',
             'price' => 'required|numeric|min:0|max:9999999',
+            'discount' => 'nullable|numeric|min:0|max:100', // Validate discount as well
         ])->validate();
 
         if ($data['image'] && $data['image'] instanceof \Illuminate\Http\UploadedFile) {
@@ -240,6 +211,7 @@ class Courses extends Page implements HasTable
             'description' => $data['description'],
             'image' => $data['image'],
             'price' => $data['price'],
+            'discount' => $data['discount'] ?? 0, // If no discount, set to 0
             'teacher_id' => auth()->id(),
             'is_published' => false,
         ]);
@@ -247,27 +219,32 @@ class Courses extends Page implements HasTable
         Utils::notify('Success', "Course '{$data['title']}' created successfully!", 'success');
     }
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Update Course Method
-    |-------------------------------------------------------------------------- 
-    | Handles updating an existing course, including handling image updates properly
-    */
     private function updateCourse(CourseModel $course, array $data): void
     {
         $validatedData = \Validator::make($data, [
             'title' => 'required|max:255',
             'description' => 'nullable|max:500',
             'price' => 'required|numeric|min:0|max:9999999',
+            'discount' => 'nullable|numeric|min:0|max:100',
         ])->validate();
 
         $updateData = [
             'title' => $data['title'],
             'description' => $data['description'],
             'price' => $data['price'],
+            'discount' => $data['discount'] ?? 0,
         ];
 
         $course->update($updateData);
         Utils::notify('Success', "Course '{$course->title}' updated successfully!", 'success');
+    }
+
+    public function details($courseId)
+    {
+        $course = CourseModel::findOrFail($courseId);
+
+        return [
+            $courseId
+        ];
     }
 }
