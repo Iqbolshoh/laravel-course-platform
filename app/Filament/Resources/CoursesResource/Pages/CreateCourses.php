@@ -9,4 +9,10 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateCourses extends CreateRecord
 {
     protected static string $resource = CoursesResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['teacher_id'] = auth()->id();
+        return $data;
+    }
 }
