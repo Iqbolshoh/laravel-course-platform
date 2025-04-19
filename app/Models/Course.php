@@ -26,6 +26,10 @@ class Course extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
+    public function lessons()
+    {
+        return $this->hasMany(Lesson::class);
+    }
     protected static function booted()
     {
         static::deleting(function ($course) {
