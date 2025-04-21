@@ -66,7 +66,7 @@ class LessonsResource extends Resource
                     ->label('YouTube Video URL')
                     ->url()
                     ->placeholder('https://www.youtube.com/watch?v=XXXX')
-                    ->helperText('Faqat YouTube videosining asosiy URL qismini kiriting.')
+                    ->helperText('Just enter the main URL part of the YouTube video.')
                     ->dehydrateStateUsing(function ($state) {
                         parse_str(parse_url($state, PHP_URL_QUERY), $query);
                         return isset($query['v']) ? 'https://www.youtube.com/watch?v=' . $query['v'] : $state;

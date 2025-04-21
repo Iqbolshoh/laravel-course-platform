@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CourseResource\RelationManagers;
 use App\Filament\Resources\CoursesResource\Pages;
-use App\Filament\Resources\CoursesResource\RelationManagers\LessonsRelationManager;
 use App\Models\Course;
 use App\Models\User;
 use Filament\Forms;
@@ -95,7 +94,6 @@ class CoursesResource extends Resource
                 TextColumn::make('created_at')->date()->sortable()->label('Created At'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
             ])
@@ -112,14 +110,11 @@ class CoursesResource extends Resource
             'index' => Pages\ListCourses::route('/'),
             'create' => Pages\CreateCourses::route('/create'),
             'edit' => Pages\EditCourses::route('/{record}/edit'),
-            'view' => Pages\ViewCourses::route('/{record}'),
         ];
     }
 
     public static function getRelations(): array
     {
-        return [
-            LessonsRelationManager::class,
-        ];
+        return [];
     }
 }
