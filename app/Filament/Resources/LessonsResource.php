@@ -29,25 +29,11 @@ class LessonsResource extends Resource
     protected static ?string $navigationGroup = 'Education';
     protected static ?int $navigationSort = 7;
 
-    /*
-    |-------------------------------------------------------------------------- 
-    | Access Control Check
-    |-------------------------------------------------------------------------- 
-    */
-    public static function canAccess(string $permission = 'view'): bool
+    public static function canAccess(): bool
     {
-        if (!$user = auth()->user())
-            return false;
-
-        return match ($permission) {
-            'view' => $user->can('lesson.view'),
-            'create' => $user->can('lesson.create'),
-            'edit' => $user->can('lesson.edit'),
-            'delete' => $user->can('lesson.delete'),
-            default => false,
-        };
+        return auth()->user()?->can('user.view') ?? false;
     }
-
+    
     public static function form(Form $form): Form
     {
         return $form
@@ -55,12 +41,14 @@ class LessonsResource extends Resource
                 Select::make('course_id')
                     ->label('Course')
                     ->relationship('course', 'title')
-                    ->required(),
+                    ->required()
+                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
                 TextInput::make('title')
                     ->label('Lesson Title')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
                 TextInput::make('video_url')
                     ->label('YouTube Video URL')
@@ -70,16 +58,20 @@ class LessonsResource extends Resource
                     ->dehydrateStateUsing(function ($state) {
                         parse_str(parse_url($state, PHP_URL_QUERY), $query);
                         return isset($query['v']) ? 'https://www.youtube.com/watch?v=' . $query['v'] : $state;
-                    }),
+                    })
+                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
                 RichEditor::make('content')
                     ->label('Lesson Content')
-                    ->maxLength(65535),
+                    ->disableToolbarButtons(['attachFiles'])
+                    ->maxLength(65535)
+                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
                 TextInput::make('order')
                     ->label('Order')
                     ->numeric()
-                    ->default(1),
+                    ->default(1)
+                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
             ]);
     }
 
@@ -107,14 +99,10 @@ class LessonsResource extends Resource
             ])
             ->filters([])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->visible(fn() => auth()->user()?->can('lesson.edit')),
+                DeleteAction::make()->visible(fn() => auth()->user()?->can('lesson.delete')),
             ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

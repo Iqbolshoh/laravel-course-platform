@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateLessons extends CreateRecord
 {
     protected static string $resource = LessonsResource::class;
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()?->can('lesson.create') ?? false;
+    }
 }

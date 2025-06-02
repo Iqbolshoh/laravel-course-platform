@@ -110,14 +110,10 @@ class CoursesResource extends Resource
                 TextColumn::make('created_at')->label('Created At')->date()->sortable(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()->disabled(fn() => !auth()->user()?->can('course.edit')),
+                Tables\Actions\DeleteAction::make()->disabled(fn() => !auth()->user()?->can('course.delete')),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getPages(): array
