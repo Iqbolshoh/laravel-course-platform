@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignId('course_id')->nullable()->constrained()->onDelete('set null');
             $table->decimal('amount', 10, 2);
             $table->enum('status', ['pending', 'success', 'failed'])->default('pending');
-            $table->string('payment_method')->nullable();
             $table->timestamps();
         });
     }
