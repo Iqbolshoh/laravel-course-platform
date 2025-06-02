@@ -10,6 +10,17 @@ class ListRoles extends ListRecords
 {
     protected static string $resource = RolesResource::class;
 
+    /**
+     * Determine whether the current user can access this resource.
+     */
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()?->hasRole('superadmin') ?? false;
+    }
+
+    /**
+     * Defines actions available in the header, specifically showing the delete action unless the role is 'superadmin'.
+     */
     protected function getHeaderActions(): array
     {
         return [

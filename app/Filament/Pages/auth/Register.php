@@ -46,7 +46,7 @@ class Register extends BaseRegister
 
     protected function handleRegistration(array $data): \Illuminate\Database\Eloquent\Model
     {
-        $role = 'student'; // DEFOULT ROLE
+        $ROLE = 'user'; // DEFOULT ROLE
 
         $user = \App\Models\User::create([
             'name' => $data['name'],
@@ -54,7 +54,7 @@ class Register extends BaseRegister
             'password' => bcrypt($data['password']),
         ]);
 
-        $user->assignRole($role);
+        $user->assignRole($ROLE);
 
         return $user;
     }
