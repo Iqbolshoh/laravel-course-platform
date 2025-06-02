@@ -2,25 +2,22 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\LessonsResource\Pages;
-use App\Filament\Resources\LessonsResource\RelationManagers;
 use App\Models\Lesson;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
+
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+use App\Filament\Resources\LessonsResource\Pages;
 
 class LessonsResource extends Resource
 {
@@ -33,65 +30,66 @@ class LessonsResource extends Resource
     {
         return auth()->user()?->can('user.view') ?? false;
     }
-    
+
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Select::make('course_id')
-                    ->label('Course')
-                    ->relationship('course', 'title')
-                    ->required()
-                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
+        return $form->schema([
+            Select::make('course_id')
+                ->label('Course')
+                ->relationship('course', 'title')
+                ->required()
+                ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
-                TextInput::make('title')
-                    ->label('Lesson Title')
-                    ->required()
-                    ->maxLength(255)
-                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
+            TextInput::make('title')
+                ->label('Lesson Title')
+                ->required()
+                ->maxLength(255)
+                ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
-                TextInput::make('video_url')
-                    ->label('YouTube Video URL')
-                    ->url()
-                    ->placeholder('https://www.youtube.com/watch?v=XXXX')
-                    ->helperText('Just enter the main URL part of the YouTube video.')
-                    ->dehydrateStateUsing(function ($state) {
-                        parse_str(parse_url($state, PHP_URL_QUERY), $query);
-                        return isset($query['v']) ? 'https://www.youtube.com/watch?v=' . $query['v'] : $state;
-                    })
-                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
+            TextInput::make('video_url')
+                ->label('YouTube Video URL')
+                ->url()
+                ->placeholder('https://www.youtube.com/watch?v=XXXX')
+                ->helperText('Just enter the main URL part of the YouTube video.')
+                ->dehydrateStateUsing(function ($state) {
+                    parse_str(parse_url($state, PHP_URL_QUERY), $query);
+                    return isset($query['v']) ? 'https://www.youtube.com/watch?v=' . $query['v'] : $state;
+                })
+                ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
-                RichEditor::make('content')
-                    ->label('Lesson Content')
-                    ->disableToolbarButtons(['attachFiles'])
-                    ->maxLength(65535)
-                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
+            RichEditor::make('content')
+                ->label('Lesson Content')
+                ->disableToolbarButtons(['attachFiles'])
+                ->maxLength(65535)
+                ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
 
-                TextInput::make('order')
-                    ->label('Order')
-                    ->numeric()
-                    ->default(1)
-                    ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
-            ]);
+            TextInput::make('order')
+                ->label('Order')
+                ->numeric()
+                ->default(1)
+                ->disabled(fn() => !auth()->user()?->can('lesson.edit')),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->reorderable('order')
+            ->defaultSort('order')
             ->columns([
                 TextColumn::make('course.title')
                     ->label('Course')
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('order')
+                    ->label('Order')
+                    ->sortable(),
+
                 TextColumn::make('title')
                     ->label('Title')
                     ->sortable()
                     ->searchable(),
-
-                TextColumn::make('order')
-                    ->label('Order')
-                    ->sortable(),
 
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -107,9 +105,7 @@ class LessonsResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

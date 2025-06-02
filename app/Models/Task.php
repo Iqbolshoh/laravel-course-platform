@@ -2,12 +2,25 @@
 
 namespace App\Models;
 
-use App\Models\TaskQuestion;
-use App\Models\TaskResult;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Task extends Model
 {
-    // 
+    protected $fillable = [
+        'lesson_id',
+        'title',
+        'instructions',
+        'duration'
+    ];
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(TaskQuestion::class);
+    }
+
+    public function results(): HasMany
+    {
+        return $this->hasMany(TaskResult::class);
+    }
 }

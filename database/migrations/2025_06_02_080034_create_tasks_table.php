@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->foreignId('lesson_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->text('instructions')->nullable();
-            $table->integer('duration')->default(60)->comment('Vaqt, minutlarda');
+            $table->integer('duration')->default(60);
             $table->timestamps();
         });
 
@@ -35,6 +35,15 @@ return new class extends Migration {
             $table->boolean('is_correct')->default(false);
             $table->timestamps();
         });
+
+        Schema::create('task_results', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('task_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->integer('score')->default(0);
+            $table->timestamp('completed_at')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -45,5 +54,6 @@ return new class extends Migration {
         Schema::dropIfExists('task_options');
         Schema::dropIfExists('task_questions');
         Schema::dropIfExists('tasks');
+        Schema::dropIfExists('task_results');
     }
 };
