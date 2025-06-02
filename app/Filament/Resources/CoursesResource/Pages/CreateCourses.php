@@ -10,6 +10,11 @@ class CreateCourses extends CreateRecord
 {
     protected static string $resource = CoursesResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()?->can('course.create') ?? false;
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['teacher_id'] = auth()->id();

@@ -17,12 +17,11 @@ return new class extends Migration {
             $table->string('image')->nullable();
             $table->text('description')->nullable();
             $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
-            $table->boolean('is_preview')->default(false);
+            $table->boolean('is_published')->default(false);
             $table->decimal('price', 10, 2)->default(0);
             $table->decimal('discount', 5, 2)->nullable()->default(0);
             $table->timestamps();
         });
-
     }
 
     /**

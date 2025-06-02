@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CourseResource\RelationManagers;
 use App\Filament\Resources\CoursesResource\Pages;
 use App\Models\Course;
-use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -15,12 +14,14 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\BooleanColumn;
 use Filament\Tables\Columns\BadgeColumn;
-use Storage;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CoursesResource extends Resource
 {
@@ -29,18 +30,9 @@ class CoursesResource extends Resource
     protected static ?string $navigationGroup = 'Education';
     protected static ?int $navigationSort = 6;
 
-    public static function canAccess(string $permission = 'view'): bool
+    public static function canAccess(): bool
     {
-        if (!$user = auth()->user())
-            return false;
-
-        return match ($permission) {
-            'view' => $user->can('course.view'),
-            'create' => $user->can('course.create'),
-            'edit' => $user->can('course.edit'),
-            'delete' => $user->can('course.delete'),
-            default => false,
-        };
+        return auth()->user()?->can('user.view') ?? false;
     }
 
     public static function form(Form $form): Form
@@ -48,33 +40,57 @@ class CoursesResource extends Resource
         return $form
             ->schema([
                 TextInput::make('title')
+                    ->label('Course Title')
                     ->required()
                     ->maxLength(255)
-                    ->label('Course Title'),
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $set('slug', Str::slug($state));
+                    })
+                    ->disabled(fn() => !auth()->user()?->can('course.edit')),
 
-                Textarea::make('description')
+                Hidden::make('slug'),
+
+                RichEditor::make('description')
                     ->label('Description')
-                    ->rows(5)
-                    ->maxLength(65535),
+                    ->disableToolbarButtons(['attachFiles'])
+                    ->maxLength(65535)
+                    ->disabled(fn() => !auth()->user()?->can('course.edit')),
 
                 FileUpload::make('image')
+                    ->label('Course Image')
+                    ->required()
                     ->image()
                     ->imageEditor()
                     ->directory('courses')
-                    ->label('Course Image'),
-
-                Toggle::make('is_published')
-                    ->label('Published'),
+                    ->imageEditorMode(2)
+                    ->openable()
+                    ->downloadable()
+                    ->previewable()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                    ->disabled(fn() => !auth()->user()?->can('course.edit')),
 
                 TextInput::make('price')
+                    ->label('Price (UZS)')
                     ->numeric()
                     ->required()
-                    ->label('Price (UZS)'),
+                    ->disabled(fn() => !auth()->user()?->can('course.edit')),
 
                 TextInput::make('discount')
-                    ->numeric()
                     ->label('Discount (%)')
-                    ->rules('nullable|numeric|min:0|max:100'),
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100)
+                    ->default(0)
+                    ->disabled(fn() => !auth()->user()?->can('course.edit')),
+
+                Toggle::make('is_published')
+                    ->label('Published')
+                    ->default(false)
+                    ->disabled(fn() => !auth()->user()?->can('course.edit')),
+
+                Hidden::make('teacher_id')
+                    ->default(fn() => auth()->id())
+                    ->dehydrated(true),
             ]);
     }
 
@@ -82,20 +98,20 @@ class CoursesResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')->searchable()->sortable(),
-                TextColumn::make('teacher.name')->sortable()->label('Teacher')->searchable(),
-                BooleanColumn::make('is_published')->sortable()->label('Published'),
-                BadgeColumn::make('price')->sortable()->label('Price (UZS)'),
-                BadgeColumn::make('discount')->sortable()->label('Discount (%)'),
+                TextColumn::make('title')->sortable()->searchable(),
+                TextColumn::make('teacher.name')->label('Teacher')->sortable()->searchable(),
+                BooleanColumn::make('is_published')->label('Published')->sortable(),
+                BadgeColumn::make('price')->label('Price (UZS)')->sortable(),
+                BadgeColumn::make('discount')->label('Discount (%)')->sortable(),
                 ImageColumn::make('image')
                     ->label('Image')
                     ->circular()
                     ->url(fn(Course $record) => Storage::url($record->image)),
-                TextColumn::make('created_at')->date()->sortable()->label('Created At'),
+                TextColumn::make('created_at')->label('Created At')->date()->sortable(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
