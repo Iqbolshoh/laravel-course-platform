@@ -9,41 +9,32 @@ use App\Models\User;
 /**
  * Class RolePermissionSeeder
  *
- * This seeder sets up role-based access control (RBAC) using the Spatie Permission package.
- * It creates permissions, roles, and users, and assigns roles to users based on a configuration array.
+ * Sets up RBAC using Spatie Permission package, creating superadmin, teacher, and student roles.
  */
 class RolePermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeding process.
-     *
-     * Initializes permissions, creates roles with their associated permissions, and seeds users
-     * with predefined roles. Outputs a success message upon completion.
-     *
-     * @return void
-     */
+    /*
+    |---------------------------------------------------------------
+    | run
+    |---------------------------------------------------------------
+    | Seeds roles, permissions, and users for RBAC setup.
+    |
+    */
     public function run(): void
     {
         /*
         |---------------------------------------------------------------
-        | Configuration Array
+        | config
         |---------------------------------------------------------------
-        |
-        | Defines the structure for permissions, roles, and users.
-        | - 'permissions': Lists resources and their allowed actions (e.g., view, create).
-        | - 'roles': Maps roles to their specific permissions (superadmin gets all).
-        | - 'users_by_role': Groups users by role with their credentials.
+        | Defines permissions, roles, and users for seeding.
         |
         */
         $config = [
             /*
             |---------------------------------------------------------------
-            | Resource Permissions
+            | permissions
             |---------------------------------------------------------------
-            |
-            | Defines available permissions for each resource in the format:
-            | 'resource' => ['action1', 'action2', ...].
-            | Example: 'user' => ['view', 'create'] creates 'user.view', 'user.create'.
+            | Defines resources and their allowed actions.
             |
             */
             'permissions' => [
@@ -51,24 +42,22 @@ class RolePermissionSeeder extends Seeder
                 'profile' => ['view', 'edit'],
                 'session' => ['view', 'delete'],
             ],
-            
+
             /*
             |---------------------------------------------------------------
-            | Roles and Their Permissions
+            | roles
             |---------------------------------------------------------------
-            |
-            | Assigns permissions to roles. The 'superadmin' role receives all permissions
-            | automatically, while other roles (manager, user) have specific permissions.
+            | Maps superadmin, teacher, and student roles to permissions.
             |
             */
             'roles' => [
-                'superadmin' => [], // Automatically assigned all permissions
-                'manager' => [
+                'superadmin' => [], // Gets all permissions
+                'teacher' => [
                     'user' => ['view', 'create', 'edit', 'delete'],
                     'profile' => ['view', 'edit'],
                     'session' => ['view', 'delete'],
                 ],
-                'user' => [
+                'student' => [
                     'profile' => ['view', 'edit'],
                     'session' => ['view', 'delete'],
                 ],
@@ -76,34 +65,29 @@ class RolePermissionSeeder extends Seeder
 
             /*
             |---------------------------------------------------------------
-            | Users Grouped by Role
+            | users_by_role
             |---------------------------------------------------------------
-            |
-            | Defines users for each role with their name, email, and password.
-            | Used for seeding initial users for testing or demo purposes.
+            | Groups users by superadmin, teacher, and student roles.
             |
             */
             'users_by_role' => [
                 'superadmin' => [
-                    ['name' => 'Super Admin', 'email' => 'superadmin@iqbolshoh.uz', 'password' => bcrypt('IQBOLSHOH')],
+                    ['name' => 'Super Admin', 'email' => 'admin@iqbolshoh.uz', 'password' => bcrypt('IQBOLSHOH')],
                 ],
-                'manager' => [
-                    ['name' => 'Manager User', 'email' => 'manager@iqbolshoh.uz', 'password' => bcrypt('IQBOLSHOH')],
+                'teacher' => [
+                    ['name' => 'Teacher User', 'email' => 'teacher@iqbolshoh.uz', 'password' => bcrypt('IQBOLSHOH')],
                 ],
-                'user' => [
-                    ['name' => 'Regular User', 'email' => 'user@iqbolshoh.uz', 'password' => bcrypt('IQBOLSHOH')],
+                'student' => [
+                    ['name' => 'Student User', 'email' => 'student@iqbolshoh.uz', 'password' => bcrypt('IQBOLSHOH')],
                 ],
             ],
         ];
 
         /*
         |---------------------------------------------------------------
-        | Create Permissions
+        | createPermissions
         |---------------------------------------------------------------
-        |
-        | Iterates through the permissions configuration to create permissions
-        | in the format "resource.action" (e.g., "user.view", "profile.edit").
-        | Uses firstOrCreate to avoid duplicates and sets the 'web' guard.
+        | Creates permissions for defined resources and actions.
         |
         */
         collect($config['permissions'])->each(
@@ -116,13 +100,9 @@ class RolePermissionSeeder extends Seeder
 
         /*
         |---------------------------------------------------------------
-        | Create Roles and Assign Permissions
+        | createRolesAndAssignPermissions
         |---------------------------------------------------------------
-        |
-        | Creates roles and assigns permissions based on the roles configuration.
-        | - Superadmin gets all permissions dynamically.
-        | - Other roles (manager, user) get only their specified permissions.
-        | Uses syncPermissions to ensure roles have exactly the listed permissions.
+        | Creates superadmin, teacher, and student roles with permissions.
         |
         */
         collect($config['roles'])->each(function ($permissions, $roleName) {
@@ -134,12 +114,9 @@ class RolePermissionSeeder extends Seeder
 
         /*
         |---------------------------------------------------------------
-        | Create Users and Assign Roles
+        | createUsersAndAssignRoles
         |---------------------------------------------------------------
-        |
-        | Creates users from the users_by_role configuration and assigns their
-        | respective roles. Uses firstOrCreate to prevent duplicate users and
-        | syncRoles to ensure each user has exactly one role.
+        | Creates users and assigns them to superadmin, teacher, or student roles.
         |
         */
         collect($config['users_by_role'])->each(
@@ -152,13 +129,11 @@ class RolePermissionSeeder extends Seeder
 
         /*
         |---------------------------------------------------------------
-        | Success Confirmation
+        | outputSuccessMessage
         |---------------------------------------------------------------
-        |
-        | Outputs a confirmation message to the console to indicate that
-        | permissions, roles, and users have been successfully seeded.
+        | Outputs success message after seeding.
         |
         */
-        $this->command->info('Permissions, roles, and users seeded successfully!');
+        $this->command->info('Superadmin, teacher, and student roles seeded successfully!');
     }
 }
