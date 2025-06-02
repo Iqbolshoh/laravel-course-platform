@@ -28,7 +28,7 @@ class LessonsResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->can('user.view') ?? false;
+        return auth()->user()?->can('lesson.view') ?? false;
     }
 
     public static function form(Form $form): Form
